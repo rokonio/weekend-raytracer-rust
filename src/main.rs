@@ -15,9 +15,21 @@ type Color = glm::Vec3;
 mod ray;
 
 fn ray_color(ray: ray::Ray) -> Color {
+    if hit_sphere(&ray, &glm::vec3(0.0, 0.0, -1.0), 0.5) {
+        return Color::new(0.0, 1.0, 0.0);
+    }
     let unit_dir = ray.dir().normalize();
     let t = 0.5 * (unit_dir.y + 1.0);
     Color::new(1.0, 1.0, 1.0).lerp(&Color::new(0.5, 0.7, 1.00), t)
+}
+
+fn hit_sphere(ray: &ray::Ray, center: &glm::Vec3, radius: f32) -> bool {
+    let oc: glm::Vec3 = ray.origin() - center;
+    let a = ray.dir().norm_squared();
+    let b = 2.0 * glm::dot(&ray.dir(), &oc);
+    let c = oc.norm_squared() - radius * radius;
+    let discriminant = b * b - 4.0 * a * c;
+    discriminant > 0.0
 }
 
 fn main() {
