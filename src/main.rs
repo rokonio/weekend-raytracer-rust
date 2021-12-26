@@ -1,4 +1,5 @@
 use minifb::{Key, Window, WindowOptions};
+use nalgebra_glm as glm;
 use rayon::prelude::*;
 
 const WIDTH: usize = 640;
@@ -38,12 +39,19 @@ fn main() {
 }
 
 fn pixel_processing(i: usize, j: usize) -> u32 {
-    let r = i as f32 / (WIDTH - 1) as f32;
-    let g = j as f32 / (HEIGHT - 1) as f32;
-    let b = 0.25;
+    let pixel_color = glm::vec3(
+        i as f32 / (WIDTH - 1) as f32,
+        j as f32 / (HEIGHT - 1) as f32,
+        0.25,
+    );
+    out_color(pixel_color)
+}
 
-    let ir = (r * 255.999) as u8;
-    let ig = (g * 255.999) as u8;
-    let ib = (b * 255.999) as u8;
+type Color = glm::Vec3;
+
+fn out_color(pixel_color: Color) -> u32 {
+    let ir = (pixel_color.x * 255.999) as u8;
+    let ig = (pixel_color.y * 255.999) as u8;
+    let ib = (pixel_color.z * 255.999) as u8;
     from_u8_rgb(ir, ig, ib)
 }

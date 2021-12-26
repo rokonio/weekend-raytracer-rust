@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 minifb = "0.20.0"
 rayon = "1.5.1"
+nalgebra-glm = "0.15.0"
