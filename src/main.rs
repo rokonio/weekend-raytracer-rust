@@ -2,8 +2,16 @@ use minifb::{Key, Window, WindowOptions};
 extern crate nalgebra_glm as glm;
 use rayon::prelude::*;
 
+const ASPECT_RATION: f32 = 16.0 / 9.0;
 const WIDTH: usize = 640;
-const HEIGHT: usize = 360;
+const HEIGHT: usize = (WIDTH as f32 / ASPECT_RATION) as usize;
+const VIEW_PORT_HEIGHT: f32 = 2.0;
+const VIEW_PORT_WIDTH: f32 = ASPECT_RATION * VIEW_PORT_HEIGHT;
+const FOCAL_LENGTH: f32 = 1.0;
+
+const ORIGIN: glm::Vec3 = glm::Vec3::new(0.0, 0.0, 0.0);
+const HORIZONTAL: glm::Vec3 = glm::Vec3::new(VIEW_PORT_WIDTH, 0.0, 0.0);
+const VERTICAL: glm::Vec3 = glm::Vec3::new(0.0, VIEW_PORT_WIDTH, 0.0);
 
 const fn from_u8_rgb(r: u8, g: u8, b: u8) -> u32 {
     let (r, g, b) = (r as u32, g as u32, b as u32);
@@ -63,13 +71,6 @@ fn main() {
 fn pixel_processing(i: usize, j: usize) -> u32 {
     // Camera
 
-    const VIEW_PORT_HEIGHT: f32 = 2.0;
-    const VIEW_PORT_WIDTH: f32 = VIEW_PORT_HEIGHT * (WIDTH as f32) / (HEIGHT as f32);
-    const FOCAL_LENGTH: f32 = 1.0;
-
-    const ORIGIN: glm::Vec3 = glm::Vec3::new(0.0, 0.0, 0.0);
-    const HORIZONTAL: glm::Vec3 = glm::Vec3::new(VIEW_PORT_WIDTH, 0.0, 0.0);
-    const VERTICAL: glm::Vec3 = glm::Vec3::new(0.0, VIEW_PORT_WIDTH, 0.0);
     let lower_left_corner =
         ORIGIN - HORIZONTAL / 2. - VERTICAL / 2. - glm::Vec3::new(0.0, 0.0, FOCAL_LENGTH);
 
