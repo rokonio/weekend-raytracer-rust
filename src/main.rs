@@ -20,7 +20,9 @@ const fn from_u8_rgb(r: u8, g: u8, b: u8) -> u32 {
 
 type Color = glm::Vec3;
 
+mod hittable;
 mod ray;
+mod sphere;
 
 fn ray_color(ray: ray::Ray) -> Color {
     let t = hit_sphere(&ray, &glm::vec3(0.0, 0.0, -1.0), 0.5);
@@ -35,16 +37,7 @@ fn ray_color(ray: ray::Ray) -> Color {
 }
 
 fn hit_sphere(ray: &ray::Ray, center: &glm::Vec3, radius: f32) -> f32 {
-    let oc: glm::Vec3 = ray.origin() - center;
-    let a = ray.dir().norm_squared();
-    let half_b = glm::dot(&ray.dir(), &oc);
-    let c = oc.norm_squared() - radius * radius;
-    let discriminant = half_b * half_b - a * c;
-    if discriminant < 0.0 {
-        -1.0
-    } else {
-        (-half_b - discriminant.sqrt()) / a
-    }
+    
 }
 
 fn main() {
