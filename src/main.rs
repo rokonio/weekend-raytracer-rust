@@ -1,4 +1,7 @@
+use hittable::{HitRecord, Hittable};
+use hittable_list::HittableList;
 use minifb::{Key, Window, WindowOptions};
+use sphere::Sphere;
 extern crate nalgebra_glm as glm;
 use rayon::prelude::*;
 
@@ -21,23 +24,19 @@ const fn from_u8_rgb(r: u8, g: u8, b: u8) -> u32 {
 type Color = glm::Vec3;
 
 mod hittable;
+mod hittable_list;
 mod ray;
 mod sphere;
 
-fn ray_color(ray: ray::Ray) -> Color {
-    let t = hit_sphere(&ray, &glm::vec3(0.0, 0.0, -1.0), 0.5);
-    if t > 0.0 {
-        let hit = (ray.at(t) - glm::vec3(0.0, 0.0, -1.0)).normalize();
-        return 0.5 * Color::new(hit.x + 1.0, hit.y + 1.0, hit.z + 1.0);
+fn ray_color(ray: ray::Ray, world: &dyn Hittable) -> Color {
+    let mut rec = HitRecord::default();
+    if world.hit(&ray, 0.0, f32::INFINITY, &mut rec) {
+        return 0.5 * (rec.normal + Color::new(1.0, 1.0, 1.0));
     }
 
     let unit_dir = ray.dir().normalize();
     let t = 0.5 * (unit_dir.y + 1.0);
     Color::new(1.0, 1.0, 1.0).lerp(&Color::new(0.5, 0.7, 1.00), t)
-}
-
-fn hit_sphere(ray: &ray::Ray, center: &glm::Vec3, radius: f32) -> f32 {
-    
 }
 
 fn main() {
@@ -57,15 +56,19 @@ fn main() {
     });
     window.limit_update_rate(Some(std::time::Duration::from_micros(16600)));
 
+    update_buffer(&mut buffer);
+
+    while window.is_open() && !window.is_key_down(Key::Escape) {
+        window.update_with_buffer(&buffer, WIDTH, HEIGHT).unwrap();
+    }
+}
+
+fn update_buffer(buffer: &mut [u32]) {
     buffer.par_iter_mut().enumerate().for_each(|(xy, i)| {
         let x = xy % WIDTH;
         let y = xy / WIDTH;
         *i = pixel_processing(x, HEIGHT - y);
     });
-
-    while window.is_open() && !window.is_key_down(Key::Escape) {
-        window.update_with_buffer(&buffer, WIDTH, HEIGHT).unwrap();
-    }
 }
 
 fn pixel_processing(i: usize, j: usize) -> u32 {
@@ -73,6 +76,10 @@ fn pixel_processing(i: usize, j: usize) -> u32 {
 
     let lower_left_corner =
         ORIGIN - HORIZONTAL / 2. - VERTICAL / 2. - glm::Vec3::new(0.0, 0.0, FOCAL_LENGTH);
+
+    let mut world = HittableList::default();
+    world.add(Box::new(Sphere::new(glm::vec3(0.0, 0.0, -1.0), 0.5)));
+    world.add(Box::new(Sphere::new(glm::vec3(0.0, -100.5, -1.0), 100.0)));
 
     // Render
 
@@ -82,7 +89,7 @@ fn pixel_processing(i: usize, j: usize) -> u32 {
         ORIGIN,
         lower_left_corner + u * HORIZONTAL + v * VERTICAL - ORIGIN,
     );
-    let pixel_color = ray_color(ray);
+    let pixel_color = ray_color(ray, &world);
     out_color(pixel_color)
 }
 

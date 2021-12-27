@@ -20,7 +20,7 @@ impl Hittable for Sphere {
         if root < t_min || root > t_max {
             root = (-half_b - sqrtd) / a;
 
-            if (root < t_min || root > t_max) {
+            if root < t_min || root > t_max {
                 return false;
             }
         }
@@ -31,5 +31,11 @@ impl Hittable for Sphere {
         rec.set_face_normal(ray, &outward_normal);
 
         true
+    }
+}
+
+impl Sphere {
+    pub fn new(center: glm::Vec3, radius: f32) -> Self {
+        Self { center, radius }
     }
 }

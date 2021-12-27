@@ -4,6 +4,7 @@ pub trait Hittable {
     fn hit(&self, ray: &ray::Ray, t_min: f32, t_max: f32, rec: &mut HitRecord) -> bool;
 }
 
+#[derive(Default)]
 pub struct HitRecord {
     pub point: glm::Vec3,
     pub t: f32,
