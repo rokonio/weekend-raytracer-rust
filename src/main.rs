@@ -12,6 +12,7 @@ const FOCAL_LENGTH: f32 = 1.0;
 const ORIGIN: glm::Vec3 = glm::Vec3::new(0.0, 0.0, 0.0);
 const HORIZONTAL: glm::Vec3 = glm::Vec3::new(VIEW_PORT_WIDTH, 0.0, 0.0);
 const VERTICAL: glm::Vec3 = glm::Vec3::new(0.0, VIEW_PORT_HEIGHT, 0.0);
+const AA: f32 = 0.05;
 
 const fn from_u8_rgb(r: u8, g: u8, b: u8) -> u32 {
     let (r, g, b) = (r as u32, g as u32, b as u32);
@@ -23,21 +24,30 @@ type Color = glm::Vec3;
 mod ray;
 
 fn ray_color(ray: ray::Ray) -> Color {
-    if hit_sphere(&ray, &glm::vec3(0.0, 0.0, -1.0), 0.5) {
-        return Color::new(0.0, 1.0, 0.0);
+    let d = hit_sphere(&ray, &glm::vec3(0.0, 0.0, -1.0), 0.5);
+    let mut r = 0.0;
+    if d > -AA && d < AA {
+        r = d * (1.0 / AA);
+    } else if d > 0.0 {
+        r = 1.0;
     }
     let unit_dir = ray.dir().normalize();
     let t = 0.5 * (unit_dir.y + 1.0);
-    Color::new(1.0, 1.0, 1.0).lerp(&Color::new(0.5, 0.7, 1.00), t)
+    let out = Color::new(1.0, 1.0, 1.0).lerp(&Color::new(0.5, 0.7, 1.00), t);
+    if r > 0.0 {
+        out.lerp(&glm::vec3(1.0, 0.0, 0.0), r)
+    } else {
+        out
+    }
 }
 
-fn hit_sphere(ray: &ray::Ray, center: &glm::Vec3, radius: f32) -> bool {
+fn hit_sphere(ray: &ray::Ray, center: &glm::Vec3, radius: f32) -> f32 {
     let oc: glm::Vec3 = ray.origin() - center;
     let a = ray.dir().norm_squared();
     let b = 2.0 * glm::dot(&ray.dir(), &oc);
     let c = oc.norm_squared() - radius * radius;
     let discriminant = b * b - 4.0 * a * c;
-    discriminant > 0.0
+    discriminant
 }
 
 fn main() {
