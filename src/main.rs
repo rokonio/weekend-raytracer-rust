@@ -28,20 +28,8 @@ mod hittable_list;
 mod ray;
 mod sphere;
 
-fn ray_color(ray: ray::Ray, world: &dyn Hittable) -> Color {
-    let mut rec = HitRecord::default();
-    if world.hit(&ray, 0.0, f32::INFINITY, &mut rec) {
-        return 0.5 * (rec.normal + Color::new(1.0, 1.0, 1.0));
-    }
-
-    let unit_dir = ray.dir().normalize();
-    let t = 0.5 * (unit_dir.y + 1.0);
-    Color::new(1.0, 1.0, 1.0).lerp(&Color::new(0.5, 0.7, 1.00), t)
-}
-
 fn main() {
     let mut buffer = [0u32; WIDTH * HEIGHT];
-
     let mut window = Window::new(
         "Test - ESC to exit",
         WIDTH,
@@ -51,13 +39,10 @@ fn main() {
             ..Default::default()
         },
     )
-    .unwrap_or_else(|e| {
-        panic!("{}", e);
-    });
+    .unwrap();
     window.limit_update_rate(Some(std::time::Duration::from_micros(16600)));
 
     update_buffer(&mut buffer);
-
     while window.is_open() && !window.is_key_down(Key::Escape) {
         window.update_with_buffer(&buffer, WIDTH, HEIGHT).unwrap();
     }
@@ -72,8 +57,6 @@ fn update_buffer(buffer: &mut [u32]) {
 }
 
 fn pixel_processing(i: usize, j: usize) -> u32 {
-    // Camera
-
     let lower_left_corner =
         ORIGIN - HORIZONTAL / 2. - VERTICAL / 2. - glm::Vec3::new(0.0, 0.0, FOCAL_LENGTH);
 
@@ -91,6 +74,17 @@ fn pixel_processing(i: usize, j: usize) -> u32 {
     );
     let pixel_color = ray_color(ray, &world);
     out_color(pixel_color)
+}
+
+fn ray_color(ray: ray::Ray, world: &dyn Hittable) -> Color {
+    let mut rec = HitRecord::default();
+    if world.hit(&ray, 0.0, f32::INFINITY, &mut rec) {
+        return 0.5 * (rec.normal + Color::new(1.0, 1.0, 1.0));
+    }
+
+    let unit_dir = ray.dir().normalize();
+    let t = 0.5 * (unit_dir.y + 1.0);
+    Color::new(1.0, 1.0, 1.0).lerp(&Color::new(0.5, 0.7, 1.00), t)
 }
 
 fn out_color(pixel_color: Color) -> u32 {

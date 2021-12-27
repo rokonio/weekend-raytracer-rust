@@ -25,7 +25,7 @@ impl Hittable for HittableList {
         let mut closest_so_far = t_max;
 
         for object in &self.objects {
-            if object.hit(&ray, t_min, closest_so_far, &mut temp_rec) {
+            if object.hit(ray, t_min, closest_so_far, &mut temp_rec) {
                 hit_anything = true;
                 closest_so_far = temp_rec.t;
                 rec.point = temp_rec.point;

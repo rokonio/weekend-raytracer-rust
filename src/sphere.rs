@@ -5,6 +5,12 @@ pub struct Sphere {
     pub radius: f32,
 }
 
+impl Sphere {
+    pub fn new(center: glm::Vec3, radius: f32) -> Self {
+        Self { center, radius }
+    }
+}
+
 impl Hittable for Sphere {
     fn hit(&self, ray: &ray::Ray, t_min: f32, t_max: f32, rec: &mut HitRecord) -> bool {
         let oc: glm::Vec3 = ray.origin() - self.center;
@@ -31,11 +37,5 @@ impl Hittable for Sphere {
         rec.set_face_normal(ray, &outward_normal);
 
         true
-    }
-}
-
-impl Sphere {
-    pub fn new(center: glm::Vec3, radius: f32) -> Self {
-        Self { center, radius }
     }
 }
