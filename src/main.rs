@@ -11,7 +11,7 @@ const FOCAL_LENGTH: f32 = 1.0;
 
 const ORIGIN: glm::Vec3 = glm::Vec3::new(0.0, 0.0, 0.0);
 const HORIZONTAL: glm::Vec3 = glm::Vec3::new(VIEW_PORT_WIDTH, 0.0, 0.0);
-const VERTICAL: glm::Vec3 = glm::Vec3::new(0.0, VIEW_PORT_WIDTH, 0.0);
+const VERTICAL: glm::Vec3 = glm::Vec3::new(0.0, VIEW_PORT_HEIGHT, 0.0);
 
 const fn from_u8_rgb(r: u8, g: u8, b: u8) -> u32 {
     let (r, g, b) = (r as u32, g as u32, b as u32);
