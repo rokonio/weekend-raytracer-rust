@@ -6,6 +6,8 @@ mod sphere;
 use hittable::Hittable;
 use hittable_list::HittableList;
 use sphere::Sphere;
+use std::sync::mpsc;
+use std::thread;
 
 use minifb::{Key, Window, WindowOptions};
 extern crate nalgebra_glm as glm;
@@ -22,6 +24,8 @@ const FOCAL_LENGTH: f32 = 1.0;
 const ORIGIN: glm::Vec3 = glm::Vec3::new(0.0, 0.0, 0.0);
 const HORIZONTAL: glm::Vec3 = glm::Vec3::new(VIEW_PORT_WIDTH, 0.0, 0.0);
 const VERTICAL: glm::Vec3 = glm::Vec3::new(0.0, VIEW_PORT_HEIGHT, 0.0);
+
+const UPDATE_RATE: usize = 5_000;
 
 // Util function for minifb because it takes a specially formatted u32 for colors
 const fn from_u8_rgb(r: u8, g: u8, b: u8) -> u32 {
@@ -58,7 +62,7 @@ fn main() {
     init_world();
 
     // Render everything
-    update_buffer(&mut buffer);
+    update_buffer(&mut buffer, &mut window);
 
     // Loop to keep window open
     while window.is_open() && !window.is_key_down(Key::Escape) {
@@ -66,12 +70,25 @@ fn main() {
     }
 }
 
-fn update_buffer(buffer: &mut [u32]) {
-    buffer.par_iter_mut().enumerate().for_each(|(xy, i)| {
-        let x = xy % WIDTH;
-        let y = xy / WIDTH;
-        *i = pixel_processing(x, HEIGHT - y);
+fn update_buffer(buffer: &mut [u32], window: &mut Window) {
+    let (sender, receiver) = mpsc::sync_channel(HEIGHT * WIDTH + 1);
+    thread::spawn(move || {
+        (0..(HEIGHT * WIDTH)).into_par_iter().for_each(|xy| {
+            let x = xy % WIDTH;
+            let y = xy / WIDTH;
+            let color = pixel_processing(x, HEIGHT - y);
+            sender.clone().send((xy, color)).unwrap();
+        });
     });
+    for (i, (xy, color)) in receiver.iter().enumerate() {
+        buffer[xy] = color;
+        // Since this is a slow function, we update it once in every UPDATE_RATE calculation
+        if i % UPDATE_RATE == 0 {
+            // PERFORMANCE maybe update the window in a parrallel thread so it doesn't block
+            // the buffer from updating
+            window.update_with_buffer(&buffer, WIDTH, HEIGHT).unwrap();
+        }
+    }
 }
 
 fn pixel_processing(i: usize, j: usize) -> u32 {
