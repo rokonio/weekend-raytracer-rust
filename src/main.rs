@@ -77,7 +77,7 @@ fn update_buffer(buffer: &mut [u32], window: &mut Window) {
             let x = xy % WIDTH;
             let y = xy / WIDTH;
             let color = pixel_processing(x, HEIGHT - y);
-            sender.clone().send((xy, color)).unwrap();
+            sender.send((xy, color)).unwrap();
         });
     });
     for (i, (xy, color)) in receiver.iter().enumerate() {
@@ -87,6 +87,9 @@ fn update_buffer(buffer: &mut [u32], window: &mut Window) {
             // PERFORMANCE maybe update the window in a parrallel thread so it doesn't block
             // the buffer from updating
             window.update_with_buffer(&buffer, WIDTH, HEIGHT).unwrap();
+            if window.is_key_down(Key::Escape) {
+                return;
+            }
         }
     }
 }
