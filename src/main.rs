@@ -14,10 +14,11 @@ use std::thread;
 use minifb::{Key, Window, WindowOptions};
 extern crate nalgebra_glm as glm;
 use once_cell::sync::OnceCell;
+use rand_distr::{Distribution, UnitBall};
 use rayon::prelude::*;
 
 const ASPECT_RATION: f32 = 16.0 / 9.0;
-const WIDTH: usize = 640;
+const WIDTH: usize = 500;
 const HEIGHT: usize = (WIDTH as f32 / ASPECT_RATION) as usize;
 // const VIEW_PORT_HEIGHT: f32 = 2.0;
 // const VIEW_PORT_WIDTH: f32 = ASPECT_RATION * VIEW_PORT_HEIGHT;
@@ -26,8 +27,9 @@ const HEIGHT: usize = (WIDTH as f32 / ASPECT_RATION) as usize;
 // const ORIGIN: glm::Vec3 = glm::Vec3::new(0.0, 0.0, 0.0);
 // const HORIZONTAL: glm::Vec3 = glm::Vec3::new(VIEW_PORT_WIDTH, 0.0, 0.0);
 // const VERTICAL: glm::Vec3 = glm::Vec3::new(0.0, VIEW_PORT_HEIGHT, 0.0);
-const SAMPLE_PER_PIXEL: u32 = 100;
+const SAMPLE_PER_PIXEL: u32 = 40;
 const UPDATE_RATE: usize = 5_000;
+const MAX_DEPTH: usize = 55;
 
 // Util function for minifb because it takes a specially formatted u32 for colors
 const fn from_u8_rgb(r: u8, g: u8, b: u8) -> u32 {
@@ -107,17 +109,27 @@ fn pixel_processing(i: usize, j: usize) -> u32 {
     for _ in 0..SAMPLE_PER_PIXEL {
         // Render
 
-        let u = (i as f32 + fastrand::f32()) / (WIDTH - 1) as f32;
-        let v = (j as f32 + fastrand::f32()) / (HEIGHT - 1) as f32;
+        let u = (i as f32 + rand::random::<f32>()) / (WIDTH - 1) as f32;
+        let v = (j as f32 + rand::random::<f32>()) / (HEIGHT - 1) as f32;
         let ray = CAMERA.get().unwrap().get_ray(u, v);
-        pixel_color += ray_color(ray, WORLD.get().unwrap());
+        pixel_color += ray_color(ray, WORLD.get().unwrap(), MAX_DEPTH);
     }
     out_color(pixel_color)
 }
 
-fn ray_color(ray: ray::Ray, world: &dyn Hittable) -> Color {
-    if let Some(rec) = world.hit(&ray, 0.0, f32::INFINITY) {
-        return 0.5 * (rec.normal + Color::new(1.0, 1.0, 1.0));
+fn ray_color(ray: ray::Ray, world: &dyn Hittable, depth: usize) -> Color {
+    if depth <= 0 {
+        return Color::new(0.0, 0.0, 0.0);
+    }
+    if let Some(rec) = world.hit(&ray, 0.001, f32::INFINITY) {
+        // let target = rec.point + rec.normal + random_in_unit_sphere(); // Incorrect Lambertian
+        let target = rec.point + random_in_hemishpere(&rec.normal); // Correct Lambertian
+        return 0.5
+            * ray_color(
+                ray::Ray::new(rec.point, target - rec.point),
+                world,
+                depth - 1,
+            );
     }
 
     let unit_dir = ray.dir.normalize();
@@ -127,8 +139,23 @@ fn ray_color(ray: ray::Ray, world: &dyn Hittable) -> Color {
 
 fn out_color(pixel_color: Color) -> u32 {
     let scale = 1.0 / SAMPLE_PER_PIXEL as f32;
-    let ir = ((pixel_color.x * scale).clamp(0.0, 0.999) * 256.0) as u8;
-    let ig = ((pixel_color.y * scale).clamp(0.0, 0.999) * 256.0) as u8;
-    let ib = ((pixel_color.z * scale).clamp(0.0, 0.999) * 256.0) as u8;
+    let ir = ((pixel_color.x * scale).sqrt().clamp(0.0, 0.999) * 256.0) as u8;
+    let ig = ((pixel_color.y * scale).sqrt().clamp(0.0, 0.999) * 256.0) as u8;
+    let ib = ((pixel_color.z * scale).sqrt().clamp(0.0, 0.999) * 256.0) as u8;
     from_u8_rgb(ir, ig, ib)
+}
+
+#[inline]
+fn random_in_unit_sphere() -> glm::Vec3 {
+    glm::make_vec3(&UnitBall.sample(&mut rand::thread_rng())).normalize()
+}
+
+#[inline]
+fn random_in_hemishpere(normal: &glm::Vec3) -> glm::Vec3 {
+    let in_unit_sphere = random_in_unit_sphere();
+    if in_unit_sphere.dot(&normal) > 0.0 {
+        in_unit_sphere
+    } else {
+        -in_unit_sphere
+    }
 }
