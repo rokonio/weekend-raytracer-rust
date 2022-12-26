@@ -1,8 +1,10 @@
+mod camera;
 mod hittable;
 mod hittable_list;
 mod ray;
 mod sphere;
 
+use camera::Camera;
 use hittable::Hittable;
 use hittable_list::HittableList;
 use sphere::Sphere;
@@ -17,14 +19,14 @@ use rayon::prelude::*;
 const ASPECT_RATION: f32 = 16.0 / 9.0;
 const WIDTH: usize = 640;
 const HEIGHT: usize = (WIDTH as f32 / ASPECT_RATION) as usize;
-const VIEW_PORT_HEIGHT: f32 = 2.0;
-const VIEW_PORT_WIDTH: f32 = ASPECT_RATION * VIEW_PORT_HEIGHT;
-const FOCAL_LENGTH: f32 = 1.0;
-
-const ORIGIN: glm::Vec3 = glm::Vec3::new(0.0, 0.0, 0.0);
-const HORIZONTAL: glm::Vec3 = glm::Vec3::new(VIEW_PORT_WIDTH, 0.0, 0.0);
-const VERTICAL: glm::Vec3 = glm::Vec3::new(0.0, VIEW_PORT_HEIGHT, 0.0);
-
+// const VIEW_PORT_HEIGHT: f32 = 2.0;
+// const VIEW_PORT_WIDTH: f32 = ASPECT_RATION * VIEW_PORT_HEIGHT;
+// const FOCAL_LENGTH: f32 = 1.0;
+//
+// const ORIGIN: glm::Vec3 = glm::Vec3::new(0.0, 0.0, 0.0);
+// const HORIZONTAL: glm::Vec3 = glm::Vec3::new(VIEW_PORT_WIDTH, 0.0, 0.0);
+// const VERTICAL: glm::Vec3 = glm::Vec3::new(0.0, VIEW_PORT_HEIGHT, 0.0);
+const SAMPLE_PER_PIXEL: u32 = 100;
 const UPDATE_RATE: usize = 5_000;
 
 // Util function for minifb because it takes a specially formatted u32 for colors
@@ -36,13 +38,19 @@ const fn from_u8_rgb(r: u8, g: u8, b: u8) -> u32 {
 type Color = glm::Vec3;
 
 static WORLD: OnceCell<HittableList> = OnceCell::new();
+static CAMERA: OnceCell<Camera> = OnceCell::new();
 
-fn init_world() {
+fn init_world_and_camera() {
     let mut world = HittableList::default();
     world.add(Box::new(Sphere::new(glm::vec3(0.0, 0.0, -1.0), 0.5)));
     world.add(Box::new(Sphere::new(glm::vec3(0.0, -100.5, -1.0), 100.0)));
     if WORLD.set(world).is_err() {
         panic!("Tried to set WORLD twice. This is a bug");
+    }
+
+    let camera = Camera::new();
+    if CAMERA.set(camera).is_err() {
+        panic!("Tried to set CAMERA twice. This is a bug");
     }
 }
 
@@ -59,7 +67,7 @@ fn main() {
     )
     .unwrap();
     window.limit_update_rate(Some(std::time::Duration::from_micros(16600)));
-    init_world();
+    init_world_and_camera();
 
     // Render everything
     update_buffer(&mut buffer, &mut window);
@@ -95,18 +103,15 @@ fn update_buffer(buffer: &mut [u32], window: &mut Window) {
 }
 
 fn pixel_processing(i: usize, j: usize) -> u32 {
-    let lower_left_corner =
-        ORIGIN - HORIZONTAL / 2. - VERTICAL / 2. - glm::Vec3::new(0.0, 0.0, FOCAL_LENGTH);
+    let mut pixel_color = Color::new(0.0, 0.0, 0.0);
+    for _ in 0..SAMPLE_PER_PIXEL {
+        // Render
 
-    // Render
-
-    let u = i as f32 / (WIDTH - 1) as f32;
-    let v = j as f32 / (HEIGHT - 1) as f32;
-    let ray = ray::Ray::new(
-        ORIGIN,
-        lower_left_corner + u * HORIZONTAL + v * VERTICAL - ORIGIN,
-    );
-    let pixel_color = ray_color(ray, WORLD.get().unwrap());
+        let u = (i as f32 + fastrand::f32()) / (WIDTH - 1) as f32;
+        let v = (j as f32 + fastrand::f32()) / (HEIGHT - 1) as f32;
+        let ray = CAMERA.get().unwrap().get_ray(u, v);
+        pixel_color += ray_color(ray, WORLD.get().unwrap());
+    }
     out_color(pixel_color)
 }
 
@@ -121,8 +126,9 @@ fn ray_color(ray: ray::Ray, world: &dyn Hittable) -> Color {
 }
 
 fn out_color(pixel_color: Color) -> u32 {
-    let ir = (pixel_color.x * 255.999) as u8;
-    let ig = (pixel_color.y * 255.999) as u8;
-    let ib = (pixel_color.z * 255.999) as u8;
+    let scale = 1.0 / SAMPLE_PER_PIXEL as f32;
+    let ir = ((pixel_color.x * scale).clamp(0.0, 0.999) * 256.0) as u8;
+    let ig = ((pixel_color.y * scale).clamp(0.0, 0.999) * 256.0) as u8;
+    let ib = ((pixel_color.z * scale).clamp(0.0, 0.999) * 256.0) as u8;
     from_u8_rgb(ir, ig, ib)
 }
