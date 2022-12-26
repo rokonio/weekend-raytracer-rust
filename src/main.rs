@@ -1,14 +1,16 @@
 mod camera;
 mod hittable;
 mod hittable_list;
+mod material;
 mod ray;
 mod sphere;
 
 use camera::Camera;
 use hittable::Hittable;
 use hittable_list::HittableList;
+use material::{Lambertian, Metal};
 use sphere::Sphere;
-use std::sync::mpsc;
+use std::sync::{mpsc, Arc};
 use std::thread;
 
 use minifb::{Key, Window, WindowOptions};
@@ -18,7 +20,7 @@ use rand_distr::{Distribution, UnitBall};
 use rayon::prelude::*;
 
 const ASPECT_RATION: f32 = 16.0 / 9.0;
-const WIDTH: usize = 500;
+const WIDTH: usize = 400;
 const HEIGHT: usize = (WIDTH as f32 / ASPECT_RATION) as usize;
 // const VIEW_PORT_HEIGHT: f32 = 2.0;
 // const VIEW_PORT_WIDTH: f32 = ASPECT_RATION * VIEW_PORT_HEIGHT;
@@ -27,9 +29,9 @@ const HEIGHT: usize = (WIDTH as f32 / ASPECT_RATION) as usize;
 // const ORIGIN: glm::Vec3 = glm::Vec3::new(0.0, 0.0, 0.0);
 // const HORIZONTAL: glm::Vec3 = glm::Vec3::new(VIEW_PORT_WIDTH, 0.0, 0.0);
 // const VERTICAL: glm::Vec3 = glm::Vec3::new(0.0, VIEW_PORT_HEIGHT, 0.0);
-const SAMPLE_PER_PIXEL: u32 = 40;
-const UPDATE_RATE: usize = 5_000;
-const MAX_DEPTH: usize = 55;
+const SAMPLE_PER_PIXEL: usize = 80;
+const UPDATE_RATE: usize = 10_000 / (SAMPLE_PER_PIXEL);
+const MAX_DEPTH: usize = 25;
 
 // Util function for minifb because it takes a specially formatted u32 for colors
 const fn from_u8_rgb(r: u8, g: u8, b: u8) -> u32 {
@@ -39,13 +41,45 @@ const fn from_u8_rgb(r: u8, g: u8, b: u8) -> u32 {
 
 type Color = glm::Vec3;
 
+const MATERIAL_GROUND: Lambertian = Lambertian {
+    albedo: Color::new(0.8, 0.8, 0.0),
+};
+const MATERIAL_CENTER: Lambertian = Lambertian {
+    albedo: Color::new(0.7, 0.3, 0.3),
+};
+const MATERIAL_LEFT: Metal = Metal {
+    albedo: Color::new(0.8, 0.8, 0.8),
+    fuzz: 0.0,
+};
+const MATERIAL_RIGHT: Metal = Metal {
+    albedo: Color::new(0.8, 0.6, 0.2),
+    fuzz: 1.0,
+};
 static WORLD: OnceCell<HittableList> = OnceCell::new();
 static CAMERA: OnceCell<Camera> = OnceCell::new();
 
 fn init_world_and_camera() {
     let mut world = HittableList::default();
-    world.add(Box::new(Sphere::new(glm::vec3(0.0, 0.0, -1.0), 0.5)));
-    world.add(Box::new(Sphere::new(glm::vec3(0.0, -100.5, -1.0), 100.0)));
+    world.add(Box::new(Sphere::new(
+        glm::vec3(0.0, -100.5, -1.0),
+        100.0,
+        Arc::new(MATERIAL_GROUND),
+    )));
+    world.add(Box::new(Sphere::new(
+        glm::vec3(0.0, 0.0, -1.0),
+        0.5,
+        Arc::new(MATERIAL_CENTER),
+    )));
+    world.add(Box::new(Sphere::new(
+        glm::vec3(-1.0, 0.0, -1.0),
+        0.5,
+        Arc::new(MATERIAL_LEFT),
+    )));
+    world.add(Box::new(Sphere::new(
+        glm::vec3(1.0, 0.0, -1.0),
+        0.5,
+        Arc::new(MATERIAL_RIGHT),
+    )));
     if WORLD.set(world).is_err() {
         panic!("Tried to set WORLD twice. This is a bug");
     }
@@ -87,7 +121,7 @@ fn update_buffer(buffer: &mut [u32], window: &mut Window) {
             let x = xy % WIDTH;
             let y = xy / WIDTH;
             let color = pixel_processing(x, HEIGHT - y);
-            sender.send((xy, color)).unwrap();
+            if let Ok(_) = sender.send((xy, color)) {}
         });
     });
     for (i, (xy, color)) in receiver.iter().enumerate() {
@@ -122,14 +156,10 @@ fn ray_color(ray: ray::Ray, world: &dyn Hittable, depth: usize) -> Color {
         return Color::new(0.0, 0.0, 0.0);
     }
     if let Some(rec) = world.hit(&ray, 0.001, f32::INFINITY) {
-        // let target = rec.point + rec.normal + random_in_unit_sphere(); // Incorrect Lambertian
-        let target = rec.point + random_in_hemishpere(&rec.normal); // Correct Lambertian
-        return 0.5
-            * ray_color(
-                ray::Ray::new(rec.point, target - rec.point),
-                world,
-                depth - 1,
-            );
+        if let Some((attenuation, scattered)) = rec.material.scatter(&ray, &rec) {
+            return attenuation.component_mul(&ray_color(scattered, world, depth - 1));
+        }
+        return Color::new(0.0, 0.0, 0.0);
     }
 
     let unit_dir = ray.dir.normalize();

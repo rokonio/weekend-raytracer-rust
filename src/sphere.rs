@@ -1,13 +1,18 @@
-use crate::{hittable::*, ray};
+use crate::{hittable::*, material::MaterialObject, ray};
 
 pub struct Sphere {
     pub center: glm::Vec3,
     pub radius: f32,
+    pub material: MaterialObject,
 }
 
 impl Sphere {
-    pub fn new(center: glm::Vec3, radius: f32) -> Self {
-        Self { center, radius }
+    pub fn new(center: glm::Vec3, radius: f32, material: MaterialObject) -> Self {
+        Self {
+            center,
+            radius,
+            material,
+        }
     }
 }
 
@@ -31,13 +36,14 @@ impl Hittable for Sphere {
             }
         }
 
-        let mut rec = HitRecord {
-            t: root,
-            point: ray.at(root),
-            ..Default::default()
-        };
-        let outward_normal = (rec.point - self.center) / self.radius;
-        rec.set_face_normal(ray, &outward_normal);
+        let outward_normal = (ray.at(root) - self.center) / self.radius;
+        let rec = HitRecord::new_with_front_face(
+            ray.at(root),
+            root,
+            self.material.clone(),
+            ray,
+            &outward_normal,
+        );
         Some(rec)
     }
 }
