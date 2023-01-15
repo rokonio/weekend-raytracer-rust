@@ -2,36 +2,29 @@ mod camera;
 mod hittable;
 mod hittable_list;
 mod material;
+mod my_scene;
 mod ray;
+mod scene;
 mod sphere;
 
 use camera::Camera;
 use hittable::Hittable;
 use hittable_list::HittableList;
-use material::{Lambertian, Metal};
+use material::{Lambertian, LightSource, Metal, ScatterResponse};
+use ray::Ray;
 use sphere::Sphere;
+use std::io::{stdout, Write};
 use std::sync::{mpsc, Arc};
 use std::thread;
+
+// use my_scene::*;
+use scene::*;
 
 use minifb::{Key, Window, WindowOptions};
 extern crate nalgebra_glm as glm;
 use once_cell::sync::OnceCell;
 use rand_distr::{Distribution, UnitBall};
 use rayon::prelude::*;
-
-const ASPECT_RATION: f32 = 16.0 / 9.0;
-const WIDTH: usize = 400;
-const HEIGHT: usize = (WIDTH as f32 / ASPECT_RATION) as usize;
-// const VIEW_PORT_HEIGHT: f32 = 2.0;
-// const VIEW_PORT_WIDTH: f32 = ASPECT_RATION * VIEW_PORT_HEIGHT;
-// const FOCAL_LENGTH: f32 = 1.0;
-//
-// const ORIGIN: glm::Vec3 = glm::Vec3::new(0.0, 0.0, 0.0);
-// const HORIZONTAL: glm::Vec3 = glm::Vec3::new(VIEW_PORT_WIDTH, 0.0, 0.0);
-// const VERTICAL: glm::Vec3 = glm::Vec3::new(0.0, VIEW_PORT_HEIGHT, 0.0);
-const SAMPLE_PER_PIXEL: usize = 80;
-const UPDATE_RATE: usize = 10_000 / (SAMPLE_PER_PIXEL);
-const MAX_DEPTH: usize = 25;
 
 // Util function for minifb because it takes a specially formatted u32 for colors
 const fn from_u8_rgb(r: u8, g: u8, b: u8) -> u32 {
@@ -41,57 +34,15 @@ const fn from_u8_rgb(r: u8, g: u8, b: u8) -> u32 {
 
 type Color = glm::Vec3;
 
-const MATERIAL_GROUND: Lambertian = Lambertian {
-    albedo: Color::new(0.8, 0.8, 0.0),
-};
-const MATERIAL_CENTER: Lambertian = Lambertian {
-    albedo: Color::new(0.7, 0.3, 0.3),
-};
-const MATERIAL_LEFT: Metal = Metal {
-    albedo: Color::new(0.8, 0.8, 0.8),
-    fuzz: 0.0,
-};
-const MATERIAL_RIGHT: Metal = Metal {
-    albedo: Color::new(0.8, 0.6, 0.2),
-    fuzz: 1.0,
-};
 static WORLD: OnceCell<HittableList> = OnceCell::new();
 static CAMERA: OnceCell<Camera> = OnceCell::new();
 
-fn init_world_and_camera() {
-    let mut world = HittableList::default();
-    world.add(Box::new(Sphere::new(
-        glm::vec3(0.0, -100.5, -1.0),
-        100.0,
-        Arc::new(MATERIAL_GROUND),
-    )));
-    world.add(Box::new(Sphere::new(
-        glm::vec3(0.0, 0.0, -1.0),
-        0.5,
-        Arc::new(MATERIAL_CENTER),
-    )));
-    world.add(Box::new(Sphere::new(
-        glm::vec3(-1.0, 0.0, -1.0),
-        0.5,
-        Arc::new(MATERIAL_LEFT),
-    )));
-    world.add(Box::new(Sphere::new(
-        glm::vec3(1.0, 0.0, -1.0),
-        0.5,
-        Arc::new(MATERIAL_RIGHT),
-    )));
-    if WORLD.set(world).is_err() {
-        panic!("Tried to set WORLD twice. This is a bug");
-    }
-
-    let camera = Camera::new();
-    if CAMERA.set(camera).is_err() {
-        panic!("Tried to set CAMERA twice. This is a bug");
-    }
-}
+const UPDATE_RATE: u64 = 30; // FPS
+const MICRO_BETWEEN_FRAME: u64 = 1_000_000 / UPDATE_RATE;
 
 fn main() {
-    let mut buffer = [0u32; WIDTH * HEIGHT];
+    let now = std::time::Instant::now();
+    let mut buffer = vec![0u32; WIDTH * HEIGHT];
     let mut window = Window::new(
         "Raytracing - ESC to exit",
         WIDTH,
@@ -102,11 +53,16 @@ fn main() {
         },
     )
     .unwrap();
-    window.limit_update_rate(Some(std::time::Duration::from_micros(16600)));
+    window.limit_update_rate(Some(std::time::Duration::from_micros(MICRO_BETWEEN_FRAME)));
     init_world_and_camera();
 
     // Render everything
     update_buffer(&mut buffer, &mut window);
+
+    eprintln!(
+        "\rFinished in {:.2}s",
+        now.elapsed().as_millis() as f32 / 1000.0
+    );
 
     // Loop to keep window open
     while window.is_open() && !window.is_key_down(Key::Escape) {
@@ -121,19 +77,22 @@ fn update_buffer(buffer: &mut [u32], window: &mut Window) {
             let x = xy % WIDTH;
             let y = xy / WIDTH;
             let color = pixel_processing(x, HEIGHT - y);
-            if let Ok(_) = sender.send((xy, color)) {}
+            let _ = sender.send((xy, color));
         });
+        eprintln!(" - Finished computing");
     });
+    let mut now = std::time::Instant::now();
     for (i, (xy, color)) in receiver.iter().enumerate() {
         buffer[xy] = color;
-        // Since this is a slow function, we update it once in every UPDATE_RATE calculation
-        if i % UPDATE_RATE == 0 {
-            // PERFORMANCE maybe update the window in a parrallel thread so it doesn't block
-            // the buffer from updating
-            window.update_with_buffer(&buffer, WIDTH, HEIGHT).unwrap();
+        if now.elapsed().as_micros() as u64 > MICRO_BETWEEN_FRAME + 100 {
+            now = std::time::Instant::now();
+            window.update_with_buffer(buffer, WIDTH, HEIGHT).unwrap();
             if window.is_key_down(Key::Escape) {
                 return;
             }
+            let progress = i as f32 / (HEIGHT * WIDTH) as f32;
+            eprint!("\r{:.1}%", progress * 100.0);
+            stdout().flush().unwrap();
         }
     }
 }
@@ -146,25 +105,37 @@ fn pixel_processing(i: usize, j: usize) -> u32 {
         let u = (i as f32 + rand::random::<f32>()) / (WIDTH - 1) as f32;
         let v = (j as f32 + rand::random::<f32>()) / (HEIGHT - 1) as f32;
         let ray = CAMERA.get().unwrap().get_ray(u, v);
-        pixel_color += ray_color(ray, WORLD.get().unwrap(), MAX_DEPTH);
+        pixel_color += ray_color(ray, WORLD.get().unwrap());
     }
     out_color(pixel_color)
 }
 
-fn ray_color(ray: ray::Ray, world: &dyn Hittable, depth: usize) -> Color {
-    if depth <= 0 {
-        return Color::new(0.0, 0.0, 0.0);
-    }
-    if let Some(rec) = world.hit(&ray, 0.001, f32::INFINITY) {
-        if let Some((attenuation, scattered)) = rec.material.scatter(&ray, &rec) {
-            return attenuation.component_mul(&ray_color(scattered, world, depth - 1));
+fn ray_color(ray: Ray, world: &dyn Hittable) -> Color {
+    use tailcall::tailcall;
+    #[tailcall]
+    fn _ray_color(ray: ray::Ray, world: &dyn Hittable, depth: usize, accumulator: Color) -> Color {
+        if depth == 0 {
+            return Color::new(0.0, 0.0, 0.0);
         }
-        return Color::new(0.0, 0.0, 0.0);
-    }
+        if let Some(rec) = world.hit(&ray, 0.001, f32::INFINITY) {
+            match rec.material.scatter(&ray, &rec) {
+                ScatterResponse::Scatter(attenuation, scattered) => {
+                    return _ray_color(
+                        scattered,
+                        world,
+                        depth - 1,
+                        attenuation.component_mul(&accumulator),
+                    );
+                }
+                ScatterResponse::Absorb(absorbtion) => {
+                    return absorbtion.component_mul(&accumulator);
+                }
+            }
+        }
 
-    let unit_dir = ray.dir.normalize();
-    let t = 0.5 * (unit_dir.y + 1.0);
-    Color::new(1.0, 1.0, 1.0).lerp(&Color::new(0.5, 0.7, 1.00), t)
+        sky_color(&ray, depth).component_mul(&accumulator)
+    }
+    _ray_color(ray, world, MAX_DEPTH, Color::new(1.0, 1.0, 1.0))
 }
 
 fn out_color(pixel_color: Color) -> u32 {
@@ -180,10 +151,11 @@ fn random_in_unit_sphere() -> glm::Vec3 {
     glm::make_vec3(&UnitBall.sample(&mut rand::thread_rng())).normalize()
 }
 
+#[allow(unused)]
 #[inline]
 fn random_in_hemishpere(normal: &glm::Vec3) -> glm::Vec3 {
     let in_unit_sphere = random_in_unit_sphere();
-    if in_unit_sphere.dot(&normal) > 0.0 {
+    if in_unit_sphere.dot(normal) > 0.0 {
         in_unit_sphere
     } else {
         -in_unit_sphere
