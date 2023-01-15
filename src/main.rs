@@ -3,6 +3,7 @@ mod hittable;
 mod hittable_list;
 mod material;
 mod my_scene;
+mod noise;
 mod ray;
 mod scene;
 mod sphere;
@@ -11,6 +12,7 @@ use camera::Camera;
 use hittable::Hittable;
 use hittable_list::HittableList;
 use material::{Lambertian, LightSource, Metal, ScatterResponse};
+use noise::*;
 use ray::Ray;
 use sphere::Sphere;
 use std::io::{stdout, Write};
@@ -56,6 +58,7 @@ fn main() {
     window.limit_update_rate(Some(std::time::Duration::from_micros(MICRO_BETWEEN_FRAME)));
     init_world_and_camera();
 
+    set_noise();
     // Render everything
     update_buffer(&mut buffer, &mut window);
 
@@ -99,13 +102,16 @@ fn update_buffer(buffer: &mut [u32], window: &mut Window) {
 
 fn pixel_processing(i: usize, j: usize) -> u32 {
     let mut pixel_color = Color::new(0.0, 0.0, 0.0);
-    for _ in 0..SAMPLE_PER_PIXEL {
+    for s in 0..SAMPLE_PER_PIXEL {
         // Render
 
-        let u = (i as f32 + rand::random::<f32>()) / (WIDTH - 1) as f32;
-        let v = (j as f32 + rand::random::<f32>()) / (HEIGHT - 1) as f32;
+        let u = (i as f32 + randx(s)) / (WIDTH - 1) as f32;
+        let v = (j as f32 + randy(s)) / (HEIGHT - 1) as f32;
         let ray = CAMERA.get().unwrap().get_ray(u, v);
-        pixel_color += ray_color(ray, WORLD.get().unwrap());
+        let r = ray_color(ray, WORLD.get().unwrap());
+        pixel_color.x += r.x.min(1.0);
+        pixel_color.y += r.y.min(1.0);
+        pixel_color.z += r.z.min(1.0);
     }
     out_color(pixel_color)
 }
