@@ -7,7 +7,7 @@ pub struct Sphere {
 }
 
 impl Sphere {
-    pub fn new(center: glm::Vec3, radius: f32, material: MaterialObject) -> Self {
+    pub const fn new(center: glm::Vec3, radius: f32, material: MaterialObject) -> Self {
         Self {
             center,
             radius,
@@ -29,7 +29,7 @@ impl Hittable for Sphere {
         let sqrtd = discriminant.sqrt();
         let mut root = (-half_b - sqrtd) / a;
         if root < t_min || root > t_max {
-            root = (-half_b - sqrtd) / a;
+            root = (-half_b + sqrtd) / a;
 
             if root < t_min || root > t_max {
                 return None;

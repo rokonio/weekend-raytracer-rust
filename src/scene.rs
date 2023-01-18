@@ -9,20 +9,10 @@ pub const SAMPLE_PER_PIXEL: usize = 100;
 pub const MAX_DEPTH: usize = 50;
 
 // Material definition
-pub const MATERIAL_GROUND: Lambertian = Lambertian {
-    albedo: Color::new(0.8, 0.8, 0.0),
-};
-pub const MATERIAL_CENTER: Lambertian = Lambertian {
-    albedo: Color::new(0.7, 0.3, 0.3),
-};
-pub const MATERIAL_LEFT: Metal = Metal {
-    albedo: Color::new(0.8, 0.8, 0.8),
-    fuzz: 0.3,
-};
-pub const MATERIAL_RIGHT: Metal = Metal {
-    albedo: Color::new(0.8, 0.6, 0.2),
-    fuzz: 1.0,
-};
+pub const MATERIAL_GROUND: Lambertian = Lambertian::new(Color::new(0.8, 0.8, 0.0));
+pub const MATERIAL_CENTER: Dielectic = Dielectic::new(1.5);
+pub const MATERIAL_LEFT: Dielectic = Dielectic::new(1.5);
+pub const MATERIAL_RIGHT: Metal = Metal::new(Color::new(0.8, 0.6, 0.2), 1.0);
 
 // Object creation
 pub fn init_world_and_camera() {

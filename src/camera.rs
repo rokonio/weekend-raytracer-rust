@@ -1,4 +1,4 @@
-use crate::ray;
+use crate::*;
 
 pub struct Camera {
     pub origin: glm::Vec3,

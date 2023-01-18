@@ -1,4 +1,4 @@
-use crate::{material::MaterialObject, ray};
+use crate::*;
 
 // A trait for every object that can be "hitted" by a ray (i.e. seen on screen)
 pub trait Hittable {

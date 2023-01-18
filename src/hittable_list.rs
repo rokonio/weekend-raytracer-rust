@@ -1,4 +1,4 @@
-use crate::hittable::{HitRecord, Hittable};
+use crate::*;
 
 type HittableObject = Box<dyn Hittable + Send + Sync>;
 
@@ -12,7 +12,7 @@ impl HittableList {
     pub fn add(&mut self, object: HittableObject) {
         self.objects.push(object);
     }
-    pub fn new(objects: Vec<HittableObject>) -> Self {
+    pub const fn new(objects: Vec<HittableObject>) -> Self {
         Self { objects }
     }
     pub fn clear(&mut self) {

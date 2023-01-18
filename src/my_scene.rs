@@ -11,29 +11,15 @@ const MAX: f32 = 0.95;
 const DIF: f32 = 0.2;
 const MET: f32 = 0.1;
 const FUZ: f32 = 0.0;
-pub const RED_METAL: Metal = Metal {
-    albedo: Color::new(MAX, DIF, DIF),
-    fuzz: FUZ,
-};
-pub const GREEN_METAL: Metal = Metal {
-    albedo: Color::new(DIF, MAX, DIF),
-    fuzz: FUZ,
-};
-pub const BLUE_METAL: Metal = Metal {
-    albedo: Color::new(DIF, DIF, MAX),
-    fuzz: FUZ,
-};
-pub const METAL: Metal = Metal {
-    albedo: Color::new(MET, MET, MET),
-    fuzz: 0.7,
-};
+pub const RED_METAL: Metal = Metal::new(Color::new(MAX, DIF, DIF), FUZ);
+pub const GREEN_METAL: Metal = Metal::new(Color::new(DIF, MAX, DIF), FUZ);
+pub const BLUE_METAL: Metal = Metal::new(Color::new(DIF, DIF, MAX), FUZ);
+pub const METAL: Metal = Metal::new(Color::new(MET, MET, MET), 0.7);
 
 const LMAX: f32 = 1.00;
 const LMED: f32 = 0.50;
 const LDIF: f32 = 0.0;
-pub const LIGHT: LightSource = LightSource {
-    albedo: Color::new(LMAX, LMED, LDIF),
-};
+pub const LIGHT: LightSource = LightSource::new(Color::new(LMAX, LMED, LDIF));
 
 pub fn init_world_and_camera() {
     let mut world = HittableList::default();

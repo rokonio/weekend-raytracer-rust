@@ -9,9 +9,10 @@ mod scene;
 mod sphere;
 
 use camera::Camera;
+use hittable::HitRecord;
 use hittable::Hittable;
 use hittable_list::HittableList;
-use material::{Lambertian, LightSource, Metal, ScatterResponse};
+use material::{Dielectic, Lambertian, LightSource, MaterialObject, Metal};
 use noise::*;
 use ray::Ray;
 use sphere::Sphere;
@@ -27,6 +28,8 @@ extern crate nalgebra_glm as glm;
 use once_cell::sync::OnceCell;
 use rand_distr::{Distribution, UnitBall};
 use rayon::prelude::*;
+
+use crate::material::ScatterResponse;
 
 // Util function for minifb because it takes a specially formatted u32 for colors
 const fn from_u8_rgb(r: u8, g: u8, b: u8) -> u32 {

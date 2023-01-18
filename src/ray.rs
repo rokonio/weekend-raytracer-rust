@@ -6,7 +6,7 @@ pub struct Ray {
 
 #[allow(dead_code)]
 impl Ray {
-    pub fn new(origin: glm::Vec3, dir: glm::Vec3) -> Ray {
+    pub const fn new(origin: glm::Vec3, dir: glm::Vec3) -> Ray {
         Ray { origin, dir }
     }
 
