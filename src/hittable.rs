@@ -1,8 +1,9 @@
-use crate::*;
+use crate::material::MaterialObject;
+use crate::ray::Ray;
 
 // A trait for every object that can be "hitted" by a ray (i.e. seen on screen)
 pub trait Hittable {
-    fn hit(&self, ray: &ray::Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
+    fn hit(&self, ray: &Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
 }
 
 // A struct that keeps informations about a hit point
@@ -19,7 +20,7 @@ impl HitRecord {
         point: glm::Vec3,
         t: f32,
         material: MaterialObject,
-        ray: &ray::Ray,
+        ray: &Ray,
         outward_normal: &glm::Vec3,
     ) -> HitRecord {
         let front_face = glm::dot(&ray.dir, outward_normal) < 0.0;

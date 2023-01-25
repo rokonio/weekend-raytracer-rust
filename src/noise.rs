@@ -25,7 +25,7 @@ pub fn blue_noise() -> Vec<glm::Vec2> {
             let mut score = f32::INFINITY;
             let candidate = glm::Vec2::new(rand::random(), rand::random());
             for test_sample in &samples {
-                let test_score = toroidal_distance(&candidate, &test_sample);
+                let test_score = toroidal_distance(&candidate, test_sample);
                 score = score.min(test_score);
             }
             if score > best_score {

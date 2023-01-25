@@ -1,4 +1,4 @@
-use crate::*;
+use crate::hittable::{HitRecord, Hittable};
 
 type HittableObject = Box<dyn Hittable + Send + Sync>;
 

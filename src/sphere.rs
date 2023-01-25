@@ -1,4 +1,6 @@
-use crate::{hittable::*, material::MaterialObject, ray};
+use crate::hittable::*;
+use crate::material::MaterialObject;
+use crate::ray;
 
 pub struct Sphere {
     pub center: glm::Vec3,

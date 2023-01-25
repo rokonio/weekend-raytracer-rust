@@ -1,4 +1,7 @@
 #![allow(unused)]
+
+use crate::material::*;
+use crate::sphere::*;
 use crate::*;
 
 // Rendering settings

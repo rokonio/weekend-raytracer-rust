@@ -1,5 +1,8 @@
-use crate::*;
 use std::sync::Arc;
+
+use crate::hittable::HitRecord;
+use crate::ray::Ray;
+use crate::{random_in_unit_sphere, Color};
 
 pub enum ScatterResponse {
     Scatter(Color, Ray),
