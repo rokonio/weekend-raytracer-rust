@@ -101,13 +101,21 @@ impl Material for Dielectic {
         let cos_theta = (-unit_direction).dot(&rec.normal).min(1.0);
         let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
         let cannot_refract = refraction_ratio * sin_theta > 1.0;
-        let direction = if cannot_refract {
-            glm::reflect_vec(&unit_direction, &rec.normal)
-        } else {
-            glm::refract_vec(&unit_direction, &rec.normal, refraction_ratio)
-        };
+        let direction =
+            if cannot_refract || reflectance(cos_theta, refraction_ratio) > rand::random() {
+                glm::reflect_vec(&unit_direction, &rec.normal)
+            } else {
+                glm::refract_vec(&unit_direction, &rec.normal, refraction_ratio)
+            };
         let scattered = Ray::new(rec.point, direction);
 
         Scatter(attenuation, scattered)
     }
+}
+
+pub fn reflectance(cosine: f32, refraction_i: f32) -> f32 {
+    // Use shlick's approximation for reflectance
+    let r0 = (1.0 - refraction_i) / (1.0 + refraction_i);
+    let r0 = r0 * r0;
+    r0 + (1.0 - r0) * (1.0 - cosine).powi(5)
 }

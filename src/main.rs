@@ -47,7 +47,7 @@ const MICRO_BETWEEN_FRAME: u64 = 1_000_000 / UPDATE_RATE;
 fn main() {
     let now = std::time::Instant::now();
     let args: Vec<String> = env::args().collect();
-    let default_path = "output.png".to_string();
+    let default_path = OUTPUT_NAME.to_string();
     let save_path = args.get(1).unwrap_or(&default_path);
     let mut buffer = vec![0u32; WIDTH * HEIGHT];
     let mut window = Window::new(

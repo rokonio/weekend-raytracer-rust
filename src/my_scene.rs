@@ -4,6 +4,9 @@ use crate::material::*;
 use crate::sphere::*;
 use crate::*;
 
+// Give a name to the output file. Png is the recommended file format
+pub const OUTPUT_NAME: &str = "my_scene_output.png";
+
 pub const ASPECT_RATION: f32 = 16.0 / 9.0;
 pub const WIDTH: usize = 900;
 pub const HEIGHT: usize = (WIDTH as f32 / ASPECT_RATION) as usize;

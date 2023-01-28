@@ -4,6 +4,9 @@ use crate::material::*;
 use crate::sphere::*;
 use crate::*;
 
+// Give a name to the output file. Png is the recommended file format
+pub const OUTPUT_NAME: &str = "scene_output.png";
+
 // Rendering settings
 pub const ASPECT_RATION: f32 = 16.0 / 9.0;
 pub const WIDTH: usize = 900;
@@ -33,6 +36,11 @@ pub fn init_world_and_camera() {
     world.add(Box::new(Sphere::new(
         glm::vec3(-1.0, 0.0, -1.0),
         0.5,
+        Arc::new(MATERIAL_LEFT),
+    )));
+    world.add(Box::new(Sphere::new(
+        glm::vec3(-1.0, 0.0, -1.0),
+        -0.4,
         Arc::new(MATERIAL_LEFT),
     )));
     world.add(Box::new(Sphere::new(
