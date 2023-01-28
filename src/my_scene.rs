@@ -5,7 +5,7 @@ use crate::sphere::*;
 use crate::*;
 
 pub const ASPECT_RATION: f32 = 16.0 / 9.0;
-pub const WIDTH: usize = 1260;
+pub const WIDTH: usize = 900;
 pub const HEIGHT: usize = (WIDTH as f32 / ASPECT_RATION) as usize;
 pub const SAMPLE_PER_PIXEL: usize = 80;
 pub const MAX_DEPTH: usize = 25;
@@ -31,11 +31,11 @@ pub fn init_world_and_camera() {
         100.0,
         Arc::new(METAL),
     )));
-    world.add(Box::new(Sphere::new(
-        glm::vec3(0.0, 102.9, -1.0),
-        100.0,
-        Arc::new(METAL),
-    )));
+    // world.add(Box::new(Sphere::new(
+    //     glm::vec3(0.0, 102.9, -1.0),
+    //     100.0,
+    //     Arc::new(METAL),
+    // )));
     for x in -9..9 {
         world.add(Box::new(Sphere::new(
             glm::vec3(x as f32, 0.0, -3.0 - rand::random::<f32>()),
@@ -57,6 +57,13 @@ pub fn init_world_and_camera() {
             Arc::new(BLUE_METAL),
         )));
     }
+    for x in -5..5 {
+        world.add(Box::new(Sphere::new(
+            glm::vec3(x as f32, 1.0, -2.5),
+            0.5,
+            Arc::new(Dielectic::new(2.0 + x as f32 / 10.0)),
+        )));
+    }
     world.add(Box::new(Sphere::new(
         glm::vec3(0.0, 0.0, 22.0),
         20.0,
@@ -70,7 +77,7 @@ pub fn init_world_and_camera() {
     world.add(Box::new(Sphere::new(
         glm::vec3(0.0, 1.0, -2.50),
         0.5,
-        Arc::new(Dielectic::new(1.5)),
+        Arc::new(Dielectic::new(1.2)),
     )));
     if WORLD.set(world).is_err() {
         panic!("Tried to set WORLD twice. This is a bug");
@@ -95,5 +102,5 @@ pub fn sky_color(ray: &Ray, depth: usize) -> Color {
     // } else {
     //     0.0
     // };
-    Color::new(0.0, 0.00, 0.00).lerp(&Color::new(s, s/2.0, s/3.0), t)
+    Color::new(0.0, 0.00, 0.00).lerp(&Color::new(s, s / 2.0, s / 3.0), t)
 }

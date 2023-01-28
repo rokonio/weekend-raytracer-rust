@@ -13,9 +13,9 @@ pub const MAX_DEPTH: usize = 50;
 
 // Material definition
 pub const MATERIAL_GROUND: Lambertian = Lambertian::new(Color::new(0.8, 0.8, 0.0));
-pub const MATERIAL_CENTER: Dielectic = Dielectic::new(1.5);
+pub const MATERIAL_CENTER: Lambertian = Lambertian::new(Color::new(0.1, 0.2, 0.5));
 pub const MATERIAL_LEFT: Dielectic = Dielectic::new(1.5);
-pub const MATERIAL_RIGHT: Metal = Metal::new(Color::new(0.8, 0.6, 0.2), 1.0);
+pub const MATERIAL_RIGHT: Metal = Metal::new(Color::new(0.8, 0.6, 0.2), 0.0);
 
 // Object creation
 pub fn init_world_and_camera() {

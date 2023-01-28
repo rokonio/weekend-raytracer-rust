@@ -14,9 +14,9 @@ use std::{env, path, thread};
 
 use hittable_list::HittableList;
 use minifb::{Key, Window, WindowOptions};
+// use my_scene::*;
 use noise::*;
 use ray::Ray;
-// use my_scene::*;
 use scene::*;
 
 use crate::camera::Camera;
@@ -98,7 +98,7 @@ fn update_buffer(buffer: &mut [u32], window: &mut Window) {
             let color = pixel_processing(x, HEIGHT - y);
             if sender.send((xy, color)).is_err() {}
         });
-        eprintln!(" - Finished computing");
+        eprintln!("\r100.0% - Finished computing");
     });
     let mut now = std::time::Instant::now();
     for (i, (xy, (r, g, b))) in receiver.iter().enumerate() {

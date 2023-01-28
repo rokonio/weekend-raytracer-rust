@@ -98,20 +98,16 @@ impl Material for Dielectic {
 
         let unit_direction = ray_in.dir.normalize();
 
-        // Listening 58 code
-        //
-        // let cos_theta = (-unit_direction).dot(&rec.normal).min(1.0);
-        // let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
-        // let cannot_refract = refraction_ratio * sin_theta > 1.0;
-        // let direction = if cannot_refract {
-        //     glm::reflect_vec(&unit_direction, &rec.normal)
-        // } else {
-        //     glm::refract_vec(&unit_direction, &rec.normal, refraction_ratio)
-        // };
-        // let scattered = Ray::new(rec.point, direction);
+        let cos_theta = (-unit_direction).dot(&rec.normal).min(1.0);
+        let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
+        let cannot_refract = refraction_ratio * sin_theta > 1.0;
+        let direction = if cannot_refract {
+            glm::reflect_vec(&unit_direction, &rec.normal)
+        } else {
+            glm::refract_vec(&unit_direction, &rec.normal, refraction_ratio)
+        };
+        let scattered = Ray::new(rec.point, direction);
 
-        let refracted = glm::refract_vec(&unit_direction, &rec.normal, refraction_ratio);
-        let scattered = Ray::new(rec.point, refracted);
         Scatter(attenuation, scattered)
     }
 }
