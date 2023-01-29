@@ -29,7 +29,7 @@ impl Lambertian {
 
 impl Material for Lambertian {
     fn scatter(&self, _ray_in: &Ray, rec: &HitRecord) -> ScatterResponse {
-        let mut scaterred_direction = rec.normal + random_in_unit_sphere();
+        let mut scaterred_direction = rec.normal + random_in_unit_sphere(rec.point.sum());
         if scaterred_direction.is_empty() {
             scaterred_direction = rec.normal;
         }
@@ -52,7 +52,10 @@ impl Metal {
 impl Material for Metal {
     fn scatter(&self, ray_in: &Ray, rec: &HitRecord) -> ScatterResponse {
         let reflected = glm::reflect_vec(&ray_in.dir.normalize(), &rec.normal);
-        let scattered = Ray::new(rec.point, reflected + self.fuzz * random_in_unit_sphere());
+        let scattered = Ray::new(
+            rec.point,
+            reflected + self.fuzz * random_in_unit_sphere(rec.point.sum()),
+        );
         if scattered.dir.dot(&rec.normal) > 0.0 {
             Scatter(self.albedo, scattered)
         } else {

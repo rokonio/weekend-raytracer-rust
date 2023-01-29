@@ -17,13 +17,14 @@ pub fn randy(i: usize) -> f32 {
 }
 
 pub fn blue_noise() -> Vec<glm::Vec2> {
+    let mut r = StdRng::seed_from_u64(SEED);
     let mut samples = Vec::new();
     for sample_index in 0..SAMPLE_PER_PIXEL {
         let mut best_score = f32::NEG_INFINITY;
         let mut best_candidate: Option<glm::Vec2> = None;
         for _ in 0..sample_index + 1 {
             let mut score = f32::INFINITY;
-            let candidate = glm::Vec2::new(rand::random(), rand::random());
+            let candidate = glm::Vec2::new(r.gen(), r.gen());
             for test_sample in &samples {
                 let test_score = toroidal_distance(&candidate, test_sample);
                 score = score.min(test_score);

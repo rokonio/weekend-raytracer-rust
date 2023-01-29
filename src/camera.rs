@@ -7,23 +7,25 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new() -> Camera {
-        const ASPECT_RATION: f32 = 16.0 / 9.0;
-        const VIEW_PORT_HEIGHT: f32 = 2.0;
-        const VIEW_PORT_WIDTH: f32 = ASPECT_RATION * VIEW_PORT_HEIGHT;
+    pub fn new(vfov: f32, aspect_ratio: f32) -> Camera {
+        let theta = vfov.to_radians();
+        let h = (theta / 2.0).tan();
+
+        let view_port_height = 2.0 * h;
+        let view_port_width = aspect_ratio * view_port_height;
         const FOCAL_LENGTH: f32 = 1.0;
 
         const ORIGIN: glm::Vec3 = glm::Vec3::new(0.0, 0.0, 0.0);
-        const HORIZONTAL: glm::Vec3 = glm::Vec3::new(VIEW_PORT_WIDTH, 0.0, 0.0);
-        const VERTICAL: glm::Vec3 = glm::Vec3::new(0.0, VIEW_PORT_HEIGHT, 0.0);
+        let horizontal: glm::Vec3 = glm::Vec3::new(view_port_width, 0.0, 0.0);
+        let vertical: glm::Vec3 = glm::Vec3::new(0.0, view_port_height, 0.0);
 
         let lower_left_corner =
-            ORIGIN - HORIZONTAL / 2. - VERTICAL / 2. - glm::Vec3::new(0.0, 0.0, FOCAL_LENGTH);
+            ORIGIN - horizontal / 2. - vertical / 2. - glm::Vec3::new(0.0, 0.0, FOCAL_LENGTH);
         Camera {
             origin: ORIGIN,
             lower_left_corner,
-            horizontal: HORIZONTAL,
-            vertical: VERTICAL,
+            horizontal,
+            vertical,
         }
     }
     pub fn get_ray(&self, u: f32, v: f32) -> Ray {

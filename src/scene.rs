@@ -8,51 +8,65 @@ use crate::*;
 pub const OUTPUT_NAME: &str = "scene_output.png";
 
 // Rendering settings
-pub const ASPECT_RATION: f32 = 16.0 / 9.0;
+pub const ASPECT_RATIO: f32 = 16.0 / 9.0;
 pub const WIDTH: usize = 900;
-pub const HEIGHT: usize = (WIDTH as f32 / ASPECT_RATION) as usize;
+pub const HEIGHT: usize = (WIDTH as f32 / ASPECT_RATIO) as usize;
 pub const SAMPLE_PER_PIXEL: usize = 100;
 pub const MAX_DEPTH: usize = 50;
 
 // Material definition
-pub const MATERIAL_GROUND: Lambertian = Lambertian::new(Color::new(0.8, 0.8, 0.0));
-pub const MATERIAL_CENTER: Lambertian = Lambertian::new(Color::new(0.1, 0.2, 0.5));
-pub const MATERIAL_LEFT: Dielectic = Dielectic::new(1.5);
-pub const MATERIAL_RIGHT: Metal = Metal::new(Color::new(0.8, 0.6, 0.2), 0.0);
+pub const MATERIAL_LEFT: Lambertian = Lambertian::new(Color::new(0.0, 0.0, 1.0));
+pub const MATERIAL_RIGHT: Lambertian = Lambertian::new(Color::new(1.0, 0.0, 0.0));
+// pub const MATERIAL_GROUND: Lambertian = Lambertian::new(Color::new(0.8, 0.8,
+// 0.0)); pub const MATERIAL_CENTER: Lambertian =
+// Lambertian::new(Color::new(0.1, 0.2, 0.5)); pub const MATERIAL_LEFT:
+// Dielectic = Dielectic::new(1.5); pub const MATERIAL_RIGHT: Metal =
+// Metal::new(Color::new(0.8, 0.6, 0.2), 0.0);
 
 // Object creation
 pub fn init_world_and_camera() {
     let mut world = HittableList::default();
+    // world.add(Box::new(Sphere::new(
+    //     glm::vec3(0.0, -100.5, -1.0),
+    //     100.0,
+    //     Arc::new(MATERIAL_GROUND),
+    // )));
+    // world.add(Box::new(Sphere::new(
+    //     glm::vec3(0.0, 0.0, -1.0),
+    //     0.5,
+    //     Arc::new(MATERIAL_CENTER),
+    // )));
+    // world.add(Box::new(Sphere::new(
+    //     glm::vec3(-1.0, 0.0, -1.0),
+    //     0.5,
+    //     Arc::new(MATERIAL_LEFT),
+    // )));
+    // world.add(Box::new(Sphere::new(
+    //     glm::vec3(-1.0, 0.0, -1.0),
+    //     -0.4,
+    //     Arc::new(MATERIAL_LEFT),
+    // )));
+    // world.add(Box::new(Sphere::new(
+    //     glm::vec3(1.0, 0.0, -1.0),
+    //     0.5,
+    //     Arc::new(MATERIAL_RIGHT),
+    // )));
+    let r = (std::f32::consts::PI / 4.0).cos();
     world.add(Box::new(Sphere::new(
-        glm::vec3(0.0, -100.5, -1.0),
-        100.0,
-        Arc::new(MATERIAL_GROUND),
-    )));
-    world.add(Box::new(Sphere::new(
-        glm::vec3(0.0, 0.0, -1.0),
-        0.5,
-        Arc::new(MATERIAL_CENTER),
-    )));
-    world.add(Box::new(Sphere::new(
-        glm::vec3(-1.0, 0.0, -1.0),
-        0.5,
+        glm::vec3(-r, 0.0, -1.0),
+        r,
         Arc::new(MATERIAL_LEFT),
     )));
     world.add(Box::new(Sphere::new(
-        glm::vec3(-1.0, 0.0, -1.0),
-        -0.4,
-        Arc::new(MATERIAL_LEFT),
-    )));
-    world.add(Box::new(Sphere::new(
-        glm::vec3(1.0, 0.0, -1.0),
-        0.5,
+        glm::vec3(r, 0.0, -1.0),
+        r,
         Arc::new(MATERIAL_RIGHT),
     )));
     if WORLD.set(world).is_err() {
         panic!("Tried to set WORLD twice. This is a bug");
     }
 
-    let camera = Camera::new();
+    let camera = Camera::new(90.0, ASPECT_RATIO);
     if CAMERA.set(camera).is_err() {
         panic!("Tried to set CAMERA twice. This is a bug");
     }

@@ -24,6 +24,8 @@ use crate::hittable::Hittable;
 extern crate nalgebra_glm as glm;
 use image::{Rgb, RgbImage};
 use once_cell::sync::OnceCell;
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 use rand_distr::{Distribution, UnitBall};
 use rayon::prelude::*;
 
@@ -35,6 +37,9 @@ const fn from_u8_0rgb(r: u8, g: u8, b: u8) -> u32 {
     let (r, g, b) = (r as u32, g as u32, b as u32);
     (r << 16) | (g << 8) | b
 }
+
+// Set a seed to get reproductible results every time
+pub const SEED: u64 = 123;
 
 type Color = glm::Vec3;
 
@@ -73,6 +78,8 @@ fn main() {
     );
 
     save_buffer(&buffer, save_path);
+
+    eprintln!("Image saved to {save_path}");
 
     // Loop to keep window open
     while window.is_open() && !window.is_key_down(Key::Escape) {
@@ -169,14 +176,24 @@ fn out_color(pixel_color: Color) -> (u8, u8, u8) {
 }
 
 #[inline]
-fn random_in_unit_sphere() -> glm::Vec3 {
-    glm::make_vec3(&UnitBall.sample(&mut rand::thread_rng())).normalize()
+fn random_in_unit_sphere(seed: f32) -> glm::Vec3 {
+    // Get a different value for small differences in rec.point by casting its
+    // f64 sum to a u64.
+    // Maybe using a real hash would be better ? I don't know if the overhead is
+    // necessary, and this implementation already works well.
+    let hash = unsafe {
+        // Safety: the function argument always returns a f64 so transmuting to u64
+        // works.
+        std::mem::transmute_copy::<_, u64>(&(seed as f64))
+    };
+    let r = &mut StdRng::seed_from_u64(hash);
+    glm::make_vec3(&UnitBall.sample(r)).normalize()
 }
 
 #[allow(unused)]
 #[inline]
-fn random_in_hemishpere(normal: &glm::Vec3) -> glm::Vec3 {
-    let in_unit_sphere = random_in_unit_sphere();
+fn random_in_hemishpere(normal: &glm::Vec3, seed: f32) -> glm::Vec3 {
+    let in_unit_sphere = random_in_unit_sphere(seed);
     if in_unit_sphere.dot(normal) > 0.0 {
         in_unit_sphere
     } else {
