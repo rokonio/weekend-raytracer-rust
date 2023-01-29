@@ -7,31 +7,39 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(vfov: f32, aspect_ratio: f32) -> Camera {
+    pub fn new(
+        look_from: glm::Vec3,
+        look_at: glm::Vec3,
+        vup: glm::Vec3,
+        vfov: f32,
+        aspect_ratio: f32,
+    ) -> Camera {
         let theta = vfov.to_radians();
         let h = (theta / 2.0).tan();
 
         let view_port_height = 2.0 * h;
         let view_port_width = aspect_ratio * view_port_height;
-        const FOCAL_LENGTH: f32 = 1.0;
 
-        const ORIGIN: glm::Vec3 = glm::Vec3::new(0.0, 0.0, 0.0);
-        let horizontal: glm::Vec3 = glm::Vec3::new(view_port_width, 0.0, 0.0);
-        let vertical: glm::Vec3 = glm::Vec3::new(0.0, view_port_height, 0.0);
+        let w = (look_from - look_at).normalize();
+        let u = vup.cross(&w).normalize();
+        let v = w.cross(&u);
 
-        let lower_left_corner =
-            ORIGIN - horizontal / 2. - vertical / 2. - glm::Vec3::new(0.0, 0.0, FOCAL_LENGTH);
+        let origin = look_from;
+        let horizontal = view_port_width * u;
+        let vertical = view_port_height * v;
+
+        let lower_left_corner = origin - horizontal / 2. - vertical / 2. - w;
         Camera {
-            origin: ORIGIN,
+            origin,
             lower_left_corner,
             horizontal,
             vertical,
         }
     }
-    pub fn get_ray(&self, u: f32, v: f32) -> Ray {
+    pub fn get_ray(&self, s: f32, t: f32) -> Ray {
         Ray::new(
             self.origin,
-            self.lower_left_corner + u * self.horizontal + v * self.vertical - self.origin,
+            self.lower_left_corner + s * self.horizontal + t * self.vertical - self.origin,
         )
     }
 }

@@ -92,7 +92,13 @@ pub fn init_world_and_camera() {
         panic!("Tried to set WORLD twice. This is a bug");
     }
 
-    let camera = Camera::new(90.0, ASPECT_RATIO);
+    let camera = Camera::new(
+        glm::vec3(0.0, 0.0, 0.0),
+        glm::vec3(0.0, 0.0, -1.0),
+        glm::vec3(0.0, 1.0, 0.0),
+        90.0,
+        ASPECT_RATIO,
+    );
     if CAMERA.set(camera).is_err() {
         panic!("Tried to set CAMERA twice. This is a bug");
     }
