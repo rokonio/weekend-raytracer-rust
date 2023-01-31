@@ -6,6 +6,7 @@ mod my_scene;
 mod noise;
 mod ray;
 mod scene;
+mod space_filler;
 mod sphere;
 
 use std::io::{stdout, Write};
@@ -100,10 +101,9 @@ fn update_buffer(buffer: &mut [u32], window: &mut Window) {
     let (sender, receiver) = mpsc::sync_channel(HEIGHT * WIDTH + 1);
     thread::spawn(move || {
         (0..(HEIGHT * WIDTH)).into_par_iter().for_each(|xy| {
-            let x = xy % WIDTH;
-            let y = xy / WIDTH;
+            let (x, y) = space_filler::filling_curve(xy, WIDTH, HEIGHT);
             let color = pixel_processing(x, HEIGHT - y);
-            if sender.send((xy, color)).is_err() {}
+            if sender.send((x + y * WIDTH, color)).is_err() {}
         });
         eprintln!("\r100.0% - Finished computing");
     });
@@ -175,18 +175,17 @@ fn out_color(pixel_color: Color) -> (u8, u8, u8) {
     (ir, ig, ib)
 }
 
+// Get a different value for small differences in seed by casting its to a u64.
+fn f32_to_unique_u64(seed: f32) -> u64 {
+    unsafe {
+        // Safety: this function always takes an f64, so trasnmuting to an u64 is safe.
+        std::mem::transmute_copy::<_, u64>(&(seed as f64))
+    }
+}
+
 #[inline]
 fn random_in_unit_sphere(seed: f32) -> glm::Vec3 {
-    // Get a different value for small differences in rec.point by casting its
-    // f64 sum to a u64.
-    // Maybe using a real hash would be better ? I don't know if the overhead is
-    // necessary, and this implementation already works well.
-    let hash = unsafe {
-        // Safety: the function argument always returns a f64 so transmuting to u64
-        // works.
-        std::mem::transmute_copy::<_, u64>(&(seed as f64))
-    };
-    let r = &mut StdRng::seed_from_u64(hash);
+    let r = &mut StdRng::seed_from_u64(f32_to_unique_u64(seed));
     glm::make_vec3(&UnitBall.sample(r)).normalize()
 }
 

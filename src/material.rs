@@ -1,8 +1,11 @@
 use std::sync::Arc;
 
+use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
+
 use crate::hittable::HitRecord;
 use crate::ray::Ray;
-use crate::{random_in_unit_sphere, Color};
+use crate::{f32_to_unique_u64, random_in_unit_sphere, Color};
 
 pub enum ScatterResponse {
     Scatter(Color, Ray),
@@ -104,12 +107,14 @@ impl Material for Dielectic {
         let cos_theta = (-unit_direction).dot(&rec.normal).min(1.0);
         let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
         let cannot_refract = refraction_ratio * sin_theta > 1.0;
-        let direction =
-            if cannot_refract || reflectance(cos_theta, refraction_ratio) > rand::random() {
-                glm::reflect_vec(&unit_direction, &rec.normal)
-            } else {
-                glm::refract_vec(&unit_direction, &rec.normal, refraction_ratio)
-            };
+
+        let can_reflect = reflectance(cos_theta, refraction_ratio)
+            > StdRng::seed_from_u64(f32_to_unique_u64(rec.point.sum())).gen();
+        let direction = if cannot_refract || can_reflect {
+            glm::reflect_vec(&unit_direction, &rec.normal)
+        } else {
+            glm::refract_vec(&unit_direction, &rec.normal, refraction_ratio)
+        };
         let scattered = Ray::new(rec.point, direction);
 
         Scatter(attenuation, scattered)
