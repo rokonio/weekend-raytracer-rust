@@ -9,12 +9,12 @@ pub struct Sphere {
 }
 
 impl Sphere {
-    pub const fn new(center: glm::Vec3, radius: f32, material: MaterialObject) -> Self {
-        Self {
+    pub fn new(center: glm::Vec3, radius: f32, material: MaterialObject) -> Box<Self> {
+        Box::new(Self {
             center,
             radius,
             material,
-        }
+        })
     }
 }
 

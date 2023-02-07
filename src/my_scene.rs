@@ -50,61 +50,57 @@ pub fn init_world_and_camera() {
     }
 
     let mut world = HittableList::default();
-    world.add(Box::new(Sphere::new(
+    world.add(Sphere::new(
         glm::vec3(0.0, -100.9, -1.0),
         100.0,
         Arc::new(METAL),
-    )));
-    // world.add(Box::new(Sphere::new(
+    ));
+    // world.add((Sphere::new(
     //     glm::vec3(0.0, 102.9, -1.0),
     //     100.0,
     //     Arc::new(METAL),
     // )));
     for x in -4..5 {
-        world.add(Box::new(Sphere::new(
+        world.add(Sphere::new(
             ((glm::vec3(x as f32, 0.0, -3.0) - glm::vec3(0.0, 0.0, 0.0)).normalize()
                 + glm::vec3(0.0, 0.0, 0.0))
                 * (5.0 + 1.5 * r.gen::<f32>()),
             0.5,
             Arc::new(RED_METAL),
-        )));
+        ));
     }
     for x in -4..5 {
-        world.add(Box::new(Sphere::new(
+        world.add(Sphere::new(
             ((glm::vec3(x as f32, 1.0, -3.0) - glm::vec3(0.0, 0.0, 1.0)).normalize()
                 + glm::vec3(0.0, 0.0, 0.0))
                 * (5.0 + 1.5 * r.gen::<f32>()),
             0.5,
             Arc::new(GREEN_METAL),
-        )));
+        ));
     }
     for x in -4..5 {
-        world.add(Box::new(Sphere::new(
+        world.add(Sphere::new(
             ((glm::vec3(x as f32, 2.0, -3.0) - glm::vec3(0.0, 0.0, 2.0)).normalize()
                 + glm::vec3(0.0, 0.0, 0.0))
                 * (5.0 + 1.5 * r.gen::<f32>()),
             0.5,
             Arc::new(BLUE_METAL),
-        )));
+        ));
     }
     for x in -2..3 {
         let p = ((glm::vec3(x as f32, 0.5, -2.5) - glm::Vec3::zeros()).normalize()
             + glm::Vec3::zeros())
             * (3.5);
         let d = Dielectic::new((5.0 + x as f32) / 2.5);
-        world.add(Box::new(Sphere::new(p, 0.7, Arc::new(d.clone()))));
-        world.add(Box::new(Sphere::new(p, -0.60, Arc::new(d))));
+        world.add(Sphere::new(p, 0.7, Arc::new(d.clone())));
+        world.add(Sphere::new(p, -0.60, Arc::new(d)));
     }
-    world.add(Box::new(Sphere::new(
+    world.add(Sphere::new(
         glm::vec3(0.0, 0.0, 22.0),
         20.0,
         Arc::new(LIGHT),
-    )));
-    world.add(Box::new(Sphere::new(
-        glm::vec3(0.0, 1.0, -8.0),
-        1.5,
-        Arc::new(LIGHT),
-    )));
+    ));
+    world.add(Sphere::new(glm::vec3(0.0, 1.0, -8.0), 1.5, Arc::new(LIGHT)));
     if WORLD.set(world).is_err() {
         panic!("Tried to set WORLD twice. This is a bug");
     }
