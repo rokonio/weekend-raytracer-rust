@@ -24,7 +24,7 @@ use crate::camera::Camera;
 use crate::hittable::Hittable;
 extern crate nalgebra_glm as glm;
 use image::{Rgb, RgbImage};
-use once_cell::sync::OnceCell;
+use once_cell::sync::{Lazy, OnceCell};
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 use rand_distr::{Distribution, UnitBall};
@@ -70,17 +70,20 @@ fn main() {
     init_world_and_camera();
 
     set_noise();
+
     // Render everything
-    update_buffer(&mut buffer, &mut window);
+    let finished = update_buffer(&mut buffer, &mut window);
 
     eprintln!(
         "\rFinished in {:.2}s",
         now.elapsed().as_millis() as f32 / 1000.0
     );
 
-    save_buffer(&buffer, save_path);
+    if finished {
+        save_buffer(&buffer, save_path);
 
-    eprintln!("Image saved to {save_path}");
+        eprintln!("Image saved to {save_path}");
+    }
 
     // Loop to keep window open
     while window.is_open() && !window.is_key_down(Key::Escape) {
@@ -97,11 +100,11 @@ fn save_buffer(buffer: &[u32], path: impl AsRef<path::Path>) {
     buffer2.save(path).unwrap();
 }
 
-fn update_buffer(buffer: &mut [u32], window: &mut Window) {
+fn update_buffer(buffer: &mut [u32], window: &mut Window) -> bool {
     let (sender, receiver) = mpsc::sync_channel(HEIGHT * WIDTH + 1);
     thread::spawn(move || {
         (0..(HEIGHT * WIDTH)).into_par_iter().for_each(|xy| {
-            let (x, y) = space_filler::filling_curve(xy, WIDTH, HEIGHT);
+            let (x, y) = space_filler::filling_curve(xy);
             let color = pixel_processing(x, HEIGHT - y);
             if sender.send((x + y * WIDTH, color)).is_err() {}
         });
@@ -114,13 +117,14 @@ fn update_buffer(buffer: &mut [u32], window: &mut Window) {
             now = std::time::Instant::now();
             window.update_with_buffer(buffer, WIDTH, HEIGHT).unwrap();
             if window.is_key_down(Key::Escape) {
-                return;
+                return false;
             }
             let progress = i as f32 / (HEIGHT * WIDTH) as f32;
             eprint!("\r{:.1}%", progress * 100.0);
             stdout().flush().unwrap();
         }
     }
+    true
 }
 
 fn pixel_processing(i: usize, j: usize) -> (u8, u8, u8) {

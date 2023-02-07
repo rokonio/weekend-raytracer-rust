@@ -20,6 +20,7 @@ pub trait Material {
 
 pub type MaterialObject = Arc<dyn Material + Send + Sync>;
 
+#[derive(Debug, Clone)]
 pub struct Lambertian {
     pub albedo: Color,
 }
@@ -41,6 +42,7 @@ impl Material for Lambertian {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct Metal {
     pub albedo: Color,
     pub fuzz: f32,
@@ -67,6 +69,7 @@ impl Material for Metal {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct LightSource {
     pub albedo: Color,
 }
@@ -83,6 +86,7 @@ impl Material for LightSource {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct Dielectic {
     pub refraction_i: f32,
 }

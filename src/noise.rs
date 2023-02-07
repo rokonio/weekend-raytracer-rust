@@ -2,24 +2,31 @@
 
 use crate::*;
 
-pub static NOISE: OnceCell<[(f32, f32); SAMPLE_PER_PIXEL]> = OnceCell::new();
+pub static NOISE: Lazy<[(f32, f32); SAMPLE_PER_PIXEL]> = Lazy::new(|| {
+    blue_noise(SAMPLE_PER_PIXEL)
+        .iter()
+        .map(|p| (p.x, p.y))
+        .collect::<Vec<(f32, f32)>>()
+        .try_into()
+        .unwrap()
+});
 
 #[inline]
 pub fn randx(i: usize) -> f32 {
-    NOISE.get().unwrap().get(i).unwrap().0
-    // rand::random()
+    NOISE.get(i).unwrap().0 //.get(i).unwrap().0
+                            // rand::random()
 }
 
 #[inline]
 pub fn randy(i: usize) -> f32 {
-    NOISE.get().unwrap().get(i).unwrap().1
-    // rand::random()
+    NOISE.get(i).unwrap().1 //.get(i).unwrap().1
+                            // rand::random()
 }
 
-pub fn blue_noise() -> Vec<glm::Vec2> {
+pub fn blue_noise(amount: usize) -> Vec<glm::Vec2> {
     let mut r = StdRng::seed_from_u64(SEED);
     let mut samples = Vec::new();
-    for sample_index in 0..SAMPLE_PER_PIXEL {
+    for sample_index in 0..amount {
         let mut best_score = f32::NEG_INFINITY;
         let mut best_candidate: Option<glm::Vec2> = None;
         for _ in 0..sample_index + 1 {
@@ -52,11 +59,11 @@ pub fn toroidal_distance(a: &glm::Vec2, b: &glm::Vec2) -> f32 {
     (dx * dx + dy * dy).sqrt()
 }
 pub fn set_noise() {
-    let noise = blue_noise()
-        .iter()
-        .map(|p| (p.x, p.y))
-        .collect::<Vec<(f32, f32)>>();
-    NOISE
-        .set(noise.try_into().unwrap())
-        .expect("NOISE set twice. This is a bug");
+    // let noise = blue_noise()
+    //     .iter()
+    //     .map(|p| (p.x, p.y))
+    //     .collect::<Vec<(f32, f32)>>();
+    // NOISE
+    //     .set(noise.try_into().unwrap())
+    //     .expect("NOISE set twice. This is a bug");
 }
